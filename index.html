@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberAI MA — Salim | Security Research Platform</title>
+  <meta name="description"
+    content="Plateforme de recherche en cybersécurité animée par l'IA. Par Salim, Dev & Solutions." />
+  <meta name="author" content="Salim Elghazoui" />
+
+  <!-- Fonts: Inter & Fira Code (for terminal) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+  <!-- ══ LOADING SCREEN ══════════════════════════════════════ -->
+  <div id="loading-screen" class="cyber-boot">
+    <div class="boot-logo">
+      <div class="hex-container">
+        <svg viewBox="0 0 100 115">
+          <polygon points="50,5 95,27.5 95,87.5 50,110 5,87.5 5,27.5" fill="none" stroke="rgba(0, 255, 136, 0.5)"
+            stroke-width="2" />
+          <polygon points="50,18 80,35 80,80 50,97 20,80 20,35" fill="none" stroke="rgba(0, 255, 136, 0.2)"
+            stroke-width="1" />
+        </svg>
+        <span class="inverted-s">S</span>
+      </div>
+      <div class="boot-branding">
+        <div class="boot-name"><span class="arr">&lt;&nbsp;</span>S A L I M<span class="arr">&nbsp;/&gt;</span></div>
+        <div class="boot-dev">DEV &amp; SOLUTIONS</div>
+      </div>
+    </div>
+    <div class="boot-text" id="boot-text">INITIALIZING SECURE KERNEL...</div>
+    <div class="ls-bar">
+      <div class="ls-fill"></div>
+    </div>
+  </div>
+
+  <!-- ══ APP (rendu par app.js) ═══════════════════════════════ -->
+  <div id="app-root"></div>
+
+  <!-- Script principal -->
+  <script src="js/app.js"></script>
+
+  <!-- Masque le loading screen après chargement -->
+  <script>
+    window.addEventListener('load', () => {
+      const ls = document.getElementById('loading-screen');
+      const texts = ["LOADING THREAT INTEL...", "CONNECTING TO AI CORE...", "ACCESS GRANTED"];
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < texts.length) {
+          document.getElementById('boot-text').innerText = texts[i];
+          i++;
+        }
+      }, 300);
+
+      setTimeout(() => {
+        clearInterval(interval);
+        if (ls) {
+          ls.style.opacity = '0';
+          setTimeout(() => { ls.remove(); }, 600);
+        }
+      }, 1500);
+    });
+  </script>
+</body>
+
+</html>
