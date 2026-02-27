@@ -1,28 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg: #050a10;
-  --surface: rgba(10, 15, 25, 0.7);
-  --surface2: #0a111a;
-  --border: rgba(0, 242, 254, 0.2);
-  --border-strong: rgba(0, 242, 254, 0.5);
+  --bg: #030610;
+  --surface: rgba(10, 15, 25, 0.4);
+  --surface2: rgba(5, 8, 15, 0.6);
+  --border: rgba(0, 242, 254, 0.15);
+  --border-strong: rgba(0, 242, 254, 0.6);
   --text: #e2e8f0;
-  --muted: #64748b;
+  --muted: #8b9bb4;
   --accent: #00f2fe;
   --accent-h: #4facfe;
   --green: #00ff88;
   --red: #ff3366;
   --yellow: #f59e0b;
-  --shadow: 0 8px 32px rgba(0, 242, 254, 0.1);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --radius: 8px;
-  --radius-lg: 12px;
+  --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.8);
+  --radius: 10px;
+  --radius-lg: 16px;
   --font: 'Inter', sans-serif;
   --font-mono: 'Fira Code', monospace;
 
-  /* Cyber grid background */
-  --grid: linear-gradient(rgba(0, 242, 254, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 242, 254, 0.05) 1px, transparent 1px);
+  /* Cyber grid background with radial fade */
+  --grid: linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
 }
 
 * {
@@ -37,12 +37,12 @@ html {
 
 body {
   font-family: var(--font);
-  background: var(--bg);
-  background-image: var(--grid);
-  background-size: 40px 40px;
+  background: radial-gradient(circle at 50% 0%, #0a1428 0%, var(--bg) 60%), var(--bg);
+  background-image: var(--grid), radial-gradient(circle at 50% 0%, #0a1428 0%, var(--bg) 60%);
+  background-size: 40px 40px, auto;
   color: var(--text);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -410,10 +410,18 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(10, 15, 25, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  border-radius: var(--radius);
   margin-bottom: 20px;
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 255, 136, 0.05);
+  transition: 0.3s;
+}
+
+.sb-me:hover {
+  border-color: rgba(0, 255, 136, 0.5);
+  box-shadow: 0 4px 25px rgba(0, 255, 136, 0.15), inset 0 0 20px rgba(0, 255, 136, 0.1);
 }
 
 .sb-me img {
@@ -458,19 +466,22 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px;
+  padding: 10px 12px;
   color: var(--text);
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: 13px;
-  transition: 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 2px solid transparent;
+  border-radius: 4px;
 }
 
 .sb-item:hover {
-  background: rgba(0, 242, 254, 0.05);
+  background: linear-gradient(90deg, rgba(0, 242, 254, 0.1) 0%, transparent 100%);
   border-left: 2px solid var(--accent);
-  color: var(--accent);
+  color: #fff;
+  transform: translateX(4px);
+  text-shadow: 0 0 8px rgba(0, 242, 254, 0.4);
 }
 
 .sb-icon {
@@ -586,11 +597,22 @@ body {
 
 /* Post Card */
 .post-card {
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
+  background: rgba(5, 8, 15, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 242, 254, 0.15);
   margin-bottom: 20px;
   position: relative;
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+}
+
+.post-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 242, 254, 0.4);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 242, 254, 0.1);
 }
 
 .post-card::before {
@@ -737,13 +759,16 @@ body {
 
 /* ─── AI ASSISTANT WIDGET ───────────────────────────────── */
 .ai-widget {
-  background: var(--surface);
-  border: 1px solid var(--accent);
-  box-shadow: 0 0 15px rgba(0, 242, 254, 0.1);
+  background: rgba(5, 8, 15, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 242, 254, 0.05);
   display: flex;
   flex-direction: column;
-  height: 400px;
+  height: 420px;
   margin-bottom: 20px;
+  overflow: hidden;
 }
 
 .ai-header {
@@ -1065,13 +1090,28 @@ body {
 }
 
 .payment-box {
-  background: var(--surface2);
-  border: 1px solid var(--green);
+  background: rgba(5, 10, 16, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 255, 136, 0.4);
   padding: 40px;
   border-radius: var(--radius-lg);
   max-width: 500px;
   width: 100%;
-  box-shadow: 0 0 30px rgba(0, 255, 136, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 255, 136, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+  animation: boxFloat 6s ease-in-out infinite alternate;
+}
+
+@keyframes boxFloat {
+  0% {
+    transform: translateY(0px);
+  }
+
+  100% {
+    transform: translateY(-8px);
+  }
 }
 
 .payment-box h3 {
